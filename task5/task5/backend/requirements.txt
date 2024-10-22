@@ -1,0 +1,11 @@
+Flask==3.0.3
+flask-cors==5.0.0
+gunicorn==23.0.0
+numpy==1.24.4
+pandas==2.2.3
+pandas-datareader==0.10.0
+pyportfolioopt==1.5.5
+requests==2.32.3
+statsmodels==0.14.3
+yfinance==0.2.46
+scikit-learn==1.5.2
