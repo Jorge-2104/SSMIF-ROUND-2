@@ -103,7 +103,6 @@ def get_carhart_factors():
 
     return factors
 
-
 def carhart_expected_returns(price_data, frequency=252):
     """
     Calculate expected returns using the Carhart four-factor model.
@@ -150,6 +149,10 @@ def carhart_expected_returns(price_data, frequency=252):
     # Compute average risk-free rate
     avg_rf = factors['RF'].mean()
 
+    # Annualize expected factor returns and avg_rf
+    expected_factor_returns_annualized = expected_factor_returns * frequency
+    avg_rf_annualized = avg_rf * frequency
+
     # Prepare a Series to store the expected returns
     expected_returns = pd.Series(index=returns.columns, dtype=np.float64)
 
@@ -163,16 +166,18 @@ def carhart_expected_returns(price_data, frequency=252):
         # Get coefficients (including intercept)
         params = model_ols.params
 
-        # Expected excess return = α + sum of (beta_i * E[Factor_i])
-        expected_excess_return = params['const'] + params[1:].mul(expected_factor_returns).sum()
+        # Annualize the intercept term (alpha)
+        alpha_annualized = params['const'] * frequency
 
-        # Expected return = expected excess return + average Risk-Free rate
-        expected_return = expected_excess_return + avg_rf
+        # Expected excess return (annualized)
+        expected_excess_return_annualized = alpha_annualized + params[1:].mul(expected_factor_returns_annualized).sum()
 
-        # Annualize the expected return
-        expected_return_annualized = expected_return * frequency
+        # Expected return (annualized)
+        expected_return_annualized = expected_excess_return_annualized + avg_rf_annualized
 
         expected_returns[stock] = expected_return_annualized
+
+
 
     return expected_returns
 
@@ -261,8 +266,7 @@ def allocate_portfolio(stocks, budget):
     # Update expected performance based on actual weights
     expected_annual_return = expected_returns.dot(actual_weights)
     portfolio_volatility = np.sqrt(np.dot(actual_weights.T, np.dot(S, actual_weights))) * np.sqrt(252)
-    sharpe_ratio = expected_annual_return / portfolio_volatility if portfolio_volatility != 0 else np.nan
-
+    sharpe_ratio = expected_annual_return / portfolio_volatility if portfolio_volatility != 0 else ValueError("portfolio_volatility can't be NaN.")
     # Compile results into a dictionary
     allocation_results = {
         'Weights': weights_series,
@@ -294,9 +298,9 @@ def allocate_portfolio(stocks, budget):
 
 
 
-# Define your stock tickers and budget
+# # Define your stock tickers and budget
 # STOCK_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN']
-# BUDGET = 10000
+# BUDGET = 100000
 
 
 # if __name__ == "__main__":
